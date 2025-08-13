@@ -1,0 +1,104 @@
+name: Main CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+      - 'release/**'
+      - 'hotfix/**'
+      
+  workflow_dispatch:
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq and jq
+        run: |
+          sudo snap install yq
+          sudo apt-get install -y jq
+
+      - name: Build dynamic matrix from image_versions.yaml
+        id: set-matrix
+        run: |
+          MATRIX=$(yq -o=json '.' .github/image_versions.yaml | jq -c 'to_entries | map({
+            image: .key,
+            version: .value.version,
+            type: .value.type,
+            dockerfile: .value.dockerfile,
+            context: .value.context
+          })')
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+      
+  unit-test:
+    needs: prepare-matrix
+    #strategy:
+      #matrix:
+        #include: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    uses: ./.github/workflows/unit-test.yaml
+    #with:
+      #image: ${{ matrix.image }}
+      #type: ${{ matrix.type }}
+
+  docker-build:
+    needs: [prepare-matrix, unit-test]
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    uses: ./.github/workflows/docker-build.yaml
+    with:
+      image: ${{ matrix.image }}
+      version: ${{ matrix.version }}
+      dockerfile: ${{ matrix.dockerfile }}
+      context: ${{ matrix.context }}
+
+  trivy-scan:
+    needs: [docker-build, prepare-matrix]
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    uses: ./.github/workflows/trivy-scan.yaml
+    with:
+      image: ${{ matrix.image }}
+      version: ${{ matrix.version }}
+
+  sbom:
+    needs: [docker-build, prepare-matrix]
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    uses: ./.github/workflows/sbom.yaml
+    with:
+      image: ${{ matrix.image }}
+      version: ${{ matrix.version }}
+      context: ${{ matrix.context }}
+      dockerfile: ${{ matrix.dockerfile }}
+
+  trivy-fs-scan:
+    needs: [docker-build, prepare-matrix]
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    uses: ./.github/workflows/trivy-fs-scan.yaml
+    with:
+      context: ${{ matrix.context }}
+      image: ${{ matrix.image }}
+      version: ${{ matrix.version }}
+      
+
+  imagesign:
+    needs: [trivy-scan, sbom, trivy-fs-scan, prepare-matrix]
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    uses: ./.github/workflows/imagesign.yaml
+    with:
+      image: ${{ matrix.image }}
+      version: ${{ matrix.version }}

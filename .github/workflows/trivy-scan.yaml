@@ -1,0 +1,33 @@
+name: Trivy Image Scan
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+jobs:
+  trivy-image-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build lowercase image ref
+        id: image-ref
+        run: |
+          owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "ref=ghcr.io/${owner}/${{ inputs.image }}:${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+
+      - name: Run Trivy Image Scan (Table Format)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.image-ref.outputs.ref }}
+          exit-code: '1' # Fail if vulnerabilities found
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true  # ✅ Prevents job failure

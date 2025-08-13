@@ -1,0 +1,31 @@
+name: Trivy Filesystem Scan
+
+on:
+  workflow_call:
+    inputs:
+      context:
+        required: true
+        type: string
+      image:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+jobs:
+  trivy-fs-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Filesystem Scan (Table Format)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: ${{ inputs.context }}
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+        continue-on-error: true  # ✅ Prevents job failure

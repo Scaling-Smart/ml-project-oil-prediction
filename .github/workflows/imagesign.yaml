@@ -1,0 +1,66 @@
+name: Cosign Image Sign and Verify
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+permissions:
+  id-token: write       # for Cosign keyless signing (OIDC)
+  contents: read        # for accessing the repo
+  packages: write       # for accessing private GHCR packages
+
+jobs:
+  sign-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build image references
+        id: ref
+        run: |
+          owner_lc=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          tag_ref="ghcr.io/${owner_lc}/${{ inputs.image }}:${{ inputs.version }}"
+          echo "tag_ref=$tag_ref" >> "$GITHUB_OUTPUT"
+          echo "owner_lc=$owner_lc" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Install Crane
+        run: |
+          curl -sLO https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz
+          tar -xzf go-containerregistry_Linux_x86_64.tar.gz crane
+          sudo mv crane /usr/local/bin/
+
+      - name: Get digest of the image
+        id: digest
+        run: |
+          DIGEST=$(crane digest "${{ steps.ref.outputs.tag_ref }}")
+          echo "full_digest=ghcr.io/${{ steps.ref.outputs.owner_lc }}/${{ inputs.image }}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Sign the image with Cosign (by digest)
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          COSIGN_YES: "true"
+        run: |
+          cosign sign "${{ steps.digest.outputs.full_digest }}"
+
+      - name: Verify the image signature
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+        run: |
+          cosign verify \
+            --certificate-identity-regexp ".*" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${{ steps.digest.outputs.full_digest }}"

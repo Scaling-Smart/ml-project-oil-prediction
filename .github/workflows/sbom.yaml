@@ -1,0 +1,42 @@
+name: SBOM Generation
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      dockerfile:
+        required: true
+        type: string
+      context:
+        required: true
+        type: string
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ${{ inputs.context }}
+          format: spdx-json
+          output-file: sbom-${{ inputs.image }}.spdx.json
+        continue-on-error: true
+
+      - name: Check if SBOM exists
+        run: ls -lh sbom-${{ inputs.image }}.spdx.json || echo "::warning::SBOM file not generated"
+
+      - name: Upload SBOM  
+        if: ${{ hashFiles(format('sbom-{0}.spdx.json', inputs.image)) != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ inputs.image }}-${{ inputs.version }}-${{ github.run_id }}
+          path: sbom-${{ inputs.image }}.spdx.json

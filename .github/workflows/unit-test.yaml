@@ -1,0 +1,67 @@
+name: Unit Test (Reusable)
+
+on:
+  workflow_call:
+    # inputs:
+    #   image:
+    #     required: true
+    #     type: string
+    #   type:
+    #     required: true
+    #     type: string
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+ 
+      - name: Set up Node.js for frontend
+        if: contains(github.repository, '<current repo>')
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+ 
+      - name: Install dependencies (frontend)
+        if: contains(github.repository, '<current repo>')
+        run: |
+          corepack enable
+          pnpm install
+ 
+      - name: Run unit tests (frontend)
+        if: contains(github.repository, '<current repo>')
+        run: pnpm test
+ 
+      - name: Run e2e tests (frontend)
+        if: contains(github.repository, '<current repo>')
+        run: pnpm e2e-chrome
+ 
+      - name: Set up Python for backend
+        if: contains(github.repository, '<current repo>')
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.8'
+ 
+      - name: Install Python dependencies
+        if: contains(github.repository, '<current repo>')
+        run: pip install -r requirements.txt
+ 
+      - name: Run backend tests
+        if: contains(github.repository, '<current repo>')
+        run: pytest -v
+#jobs:
+  #unit-test:
+    #runs-on: ubuntu-latest
+    #steps:
+      #- name: Checkout code
+        #uses: actions/checkout@v4
+
+      # - name: Run Unit Tests
+      #   run: |
+      #     echo "Running unit tests for ${{ inputs.image }} (type=${{ inputs.type }})"
+      #     if [[ "${{ inputs.type }}" == "java" ]]; then
+      #       mvn test
+      #     elif [[ "${{ inputs.type }}" == "python" ]]; then
+      #       pytest
+      #     else
+      #       echo "No unit tests defined for type=${{ inputs.type }}"
+      #     fi
