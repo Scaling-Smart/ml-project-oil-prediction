@@ -10,13 +10,13 @@ import pandas as pd
 # Ensure the project root is on the Python path for imports
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-_tmpdir = tempfile.mkdtemp()
-os.environ["MLFLOW_TRACKING_URI"] = f"sqlite:///{os.path.join(_tmpdir, 'mlflow.db')}"
-_artifact_dir = os.path.join(_tmpdir, "artifacts")
-os.environ["MLFLOW_ARTIFACT_URI"] = _artifact_dir
-os.environ["REGISTERED_MODEL_NAME"] = "TestModel"
-os.environ["MLFLOW_EXPERIMENT"] = "TestExperiment"
-os.makedirs(_artifact_dir, exist_ok=True)
+#_tmpdir = tempfile.mkdtemp()
+#os.environ["MLFLOW_TRACKING_URI"] = os.getenv("MLFLOW_TRACKING_URI")     
+#_artifact_dir = os.path.join(_tmpdir, "artifacts")
+#os.environ["MLFLOW_ARTIFACT_URI"] = "artifacts"
+#os.environ["REGISTERED_MODEL_NAME"] = "TestModel"
+#os.environ["MLFLOW_EXPERIMENT"] = "TestExperiment"
+#os.makedirs(_artifact_dir, exist_ok=True)
 
 from train_wti_mlflow_fallback import make_lags, make_rolls
 
