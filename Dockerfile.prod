@@ -1,0 +1,47 @@
+# Multi-stage build for RAG ChatBot
+FROM python:3.12.6 as base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    poppler-utils \
+    gcc \
+    g++ \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY src/ ./src/
+COPY scripts/ ./scripts/
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash --user-group analyst
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/cache && \
+    chown -R analyst:analyst /app
+
+# Switch to non-root user
+USER analyst
+
+# Set environment variables
+ENV PYTHONPATH=/app/src
+ENV TRANSFORMERS_CACHE=/app/cache
+ENV HF_HOME=/app/cache
+
+# Health check
+#HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+ #   CMD python -c "import requests; requests.get('http://localhost:7860/health', timeout=5)" || exit 1
+
+# Default command
+CMD ["python", "src/chatbot_ui.py"]
