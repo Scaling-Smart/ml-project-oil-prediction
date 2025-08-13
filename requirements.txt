@@ -1,0 +1,16 @@
+panda
+yfinance
+fredapi
+pandas
+numpy
+matplotlib
+seaborn
+numpy  
+scikit-learn
+plotly
+scipy
+keras
+tensorflow
+ipykernel
+mlflow==2.8.1
+minio
