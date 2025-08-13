@@ -48,6 +48,9 @@ jobs:
 
   docker-build:
     needs: [prepare-matrix, unit-test]
+    permissions:
+      contents: read         # to checkout/clone
+      packages: write        # <-- needed to push to GHCR
     strategy:
       matrix:
         include: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
