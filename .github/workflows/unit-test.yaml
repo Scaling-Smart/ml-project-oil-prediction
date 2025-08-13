@@ -36,17 +36,17 @@ jobs:
         run: pnpm e2e-chrome
  
       - name: Set up Python for backend
-        if: contains(github.repository, 'cicd')
+        if: contains(github.repository, 'ml-project-oil-prediction')
         uses: actions/setup-python@v4
         with:
           python-version: '3.12.8'
  
       - name: Install Python dependencies
-        if: contains(github.repository, '<current repo')
+        if: contains(github.repository, 'ml-project-oil-prediction')
         run: pip install -r requirements.txt
  
       - name: Run backend tests
-        if: contains(github.repository, '<current repo')
+        if: contains(github.repository, 'ml-project-oil-prediction')
         run: pytest -v
 #jobs:
   #unit-test:
