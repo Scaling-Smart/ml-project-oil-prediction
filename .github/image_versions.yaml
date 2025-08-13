@@ -1,4 +1,4 @@
-<container-file-name1>:
+oil-wti-prediction:
   type: docker
   version: 1.0.0
   dockerfile: Dockerfile.prod
