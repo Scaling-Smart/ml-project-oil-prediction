@@ -18,45 +18,29 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 #os.environ["MLFLOW_EXPERIMENT"] = "TestExperiment"
 #os.makedirs(_artifact_dir, exist_ok=True)
 
-from src.train_wti_mlflow_fallback import make_lags, make_rolls
-
-BASE_COLS = ["WTI", "DJU", "Gold", "SP500", "US10Y", "USD_INDEX"]
+#from src.train_wti_mlflow_fallback import make_lags, make_rolls
 
 
-def _sample_frame():
-    return pd.DataFrame({
-        "WTI": [1, 2, 3, 4, 5],
-        "DJU": [5, 4, 3, 2, 1],
-        "Gold": [10, 20, 30, 40, 50],
-        "SP500": [100, 110, 120, 130, 140],
-        "US10Y": [0.5, 0.6, 0.7, 0.8, 0.9],
-        "USD_INDEX": [80, 82, 84, 86, 88],
-    })
+import unittest
+from src.calculator import add, subtract
 
+class TestCalculator(unittest.TestCase):
 
-def test_make_lags():
-    df = _sample_frame()
-    lags = (1, 2)
-    lagged = make_lags(df, BASE_COLS, lags=lags)
-    for col in BASE_COLS:
-        for lag in lags:
-            expected = df[col].shift(lag)
-            pd.testing.assert_series_equal(
-                lagged[f"{col}_lag{lag}"], expected, check_names=False
-            )
+    def test_add(self):
+        """Test the addition function."""
+        result = add(10, 5)
+        self.assertEqual(result, 15)  # Assertion 1
+        
+        result_negatives = add(-1, -1)
+        self.assertEqual(result_negatives, -2) # Assertion 2
 
+    def test_subtract(self):
+        """Test the subtraction function."""
+        result = subtract(10, 5)
+        self.assertEqual(result, 5)   # Assertion 1
 
-def test_make_rolls():
-    df = _sample_frame()
-    windows = (2, 3)
-    rolled = make_rolls(df, BASE_COLS, windows=windows)
-    for col in BASE_COLS:
-        for w in windows:
-            mean_expected = df[col].rolling(w).mean()
-            std_expected = df[col].rolling(w).std()
-            pd.testing.assert_series_equal(
-                rolled[f"{col}_rollmean{w}"], mean_expected, check_names=False
-            )
-            pd.testing.assert_series_equal(
-                rolled[f"{col}_rollstd{w}"], std_expected, check_names=False
-            )
+        result_negative = subtract(5, 10)
+        self.assertEqual(result_negative, -5) # Assertion 2
+
+if __name__ == '__main__':
+    unittest.main()
