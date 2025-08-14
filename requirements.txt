@@ -14,3 +14,4 @@ tensorflow
 ipykernel
 mlflow==2.8.1
 minio
+pytest
