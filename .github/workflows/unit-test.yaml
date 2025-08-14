@@ -39,7 +39,7 @@ jobs:
         if: contains(github.repository, 'ml-project-oil-prediction')
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12.8'
+          python-version: '3.12.6'
  
       - name: Install Python dependencies
         if: contains(github.repository, 'ml-project-oil-prediction')
