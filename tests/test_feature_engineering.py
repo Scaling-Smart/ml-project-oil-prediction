@@ -18,7 +18,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 #os.environ["MLFLOW_EXPERIMENT"] = "TestExperiment"
 #os.makedirs(_artifact_dir, exist_ok=True)
 
-from train_wti_mlflow_fallback import make_lags, make_rolls
+from src.train_wti_mlflow_fallback import make_lags, make_rolls
 
 BASE_COLS = ["WTI", "DJU", "Gold", "SP500", "US10Y", "USD_INDEX"]
 
